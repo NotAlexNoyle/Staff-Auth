@@ -9,7 +9,7 @@ JVM: `./gradlew shadowJar`\
 GraalVM Native: `./gradlew nativeCompile`
 
 ## Configuration
-Copy [application.yml.example](application.yml.example), rename it to whatever you like, fill it in and run the server binary with `MICRONAUT_CONFIG_FILE=path/to/your/application.yml`.
+Copy [application.yml.example](application.yml.example), rename it to whatever you like, fill it in and run the server binary with `MICRONAUT_CONFIG_FILES=path/to/your/application.yml`.
 
 ## Initial setup
 Run the server binary with `--initialSetup.adminUuid=your-uuid-here`.
