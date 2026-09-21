@@ -108,7 +108,7 @@ class LoginService(
             throw UnrecoverableException(response.redirectTo)
         }
         val reply = ipCheckerStub.checkIp(ipCheckRequest {
-            this.uuid = user.uuid.toString()
+            this.uuid = user.minecraftUuid.toString()
         })
         val valid = reply.ip == ip
         if (valid) {
