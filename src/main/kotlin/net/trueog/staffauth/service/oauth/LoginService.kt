@@ -21,6 +21,7 @@ import sh.ory.hydra.model.AcceptOAuth2LoginRequest
 import sh.ory.hydra.model.OAuth2LoginRequest
 import sh.ory.hydra.model.RejectOAuth2Request
 import java.time.Duration
+import java.util.UUID
 
 @Singleton
 class LoginService(
@@ -40,7 +41,7 @@ class LoginService(
     @Value($$"${hydra.remember-duration}")
     lateinit var rememberDuration: Duration
 
-    fun getLoginData(loginChallenge: String): LoginDataDto = when (loginStageMap.getIfPresent(loginChallenge)) {
+    suspend fun getLoginData(loginChallenge: String): LoginDataDto = when (loginStageMap.getIfPresent(loginChallenge)) {
         is LoginStage.AwaitingMinecraftCheck -> LoginDataDto(false, null, "MINECRAFT_CHECK")
         is LoginStage.AwaitingTotp -> LoginDataDto(false, null, "TOTP")
         is LoginStage.AwaitingAccept -> LoginDataDto(false, null, "ACCEPT")
@@ -48,6 +49,11 @@ class LoginService(
             try {
                 val loginRequest = oAuth2Api.getOAuth2LoginRequest(loginChallenge)
                 if (loginRequest.skip) {
+                    val user = userRepository.findByUuid(UUID.fromString(loginRequest.subject))
+                    if (user == null || !user.isSetUp || user.deactivated) {
+                        val response = oAuth2Api.rejectOAuth2LoginRequest(loginChallenge, RejectOAuth2Request())
+                        throw UnrecoverableException(response.redirectTo)
+                    }
                     val response = oAuth2Api.acceptOAuth2LoginRequest(
                         loginRequest.challenge,
                         AcceptOAuth2LoginRequest().subject(loginRequest.subject)

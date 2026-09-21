@@ -27,7 +27,7 @@ class LoginController(
     private val loginService: LoginService,
 ) {
     @Get("/data")
-    fun loginData(@QueryValue("login_challenge") loginChallenge: String): LoginDataDto =
+    suspend fun loginData(@QueryValue("login_challenge") loginChallenge: String): LoginDataDto =
         loginService.getLoginData(loginChallenge)
 
     @Post("/credentials")
