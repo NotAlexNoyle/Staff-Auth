@@ -4,21 +4,15 @@ import dev.samstevens.totp.code.CodeVerifier
 import dev.samstevens.totp.code.HashingAlgorithm
 import dev.samstevens.totp.qr.QrData
 import dev.samstevens.totp.qr.ZxingPngQrGenerator
-import dev.samstevens.totp.secret.SecretGenerator
 import dev.samstevens.totp.util.Utils.getDataUriForImage
 import jakarta.inject.Singleton
 
 @Singleton
-class TotpService(
-    private val secretGenerator: SecretGenerator,
-    private val codeVerifier: CodeVerifier
-) {
+class TotpService(private val codeVerifier: CodeVerifier) {
     /**
      * @return secret, qrCode
      */
-    fun generateTotp(username: String): Pair<String, String> {
-        val secret = secretGenerator.generate()
-
+    fun generateTotp(secret: String, username: String): Pair<String, String> {
         val qrCodeData = QrData.Builder()
             .label(username)
             .secret(secret)
