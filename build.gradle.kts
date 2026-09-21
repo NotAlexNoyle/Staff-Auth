@@ -2,7 +2,6 @@ import com.google.protobuf.gradle.id
 
 plugins {
     kotlin("jvm") version "2.3.21"
-    kotlin("kapt") version "2.3.21"
     kotlin("plugin.allopen") version "2.3.21"
     id("com.google.devtools.ksp") version "2.3.10"
     id("io.micronaut.application") version "4.6.2"
