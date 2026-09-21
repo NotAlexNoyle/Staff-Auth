@@ -41,7 +41,7 @@ class LoginService(
     @Value($$"${hydra.remember-duration}")
     lateinit var rememberDuration: Duration
 
-    suspend fun getLoginData(loginChallenge: String): LoginDataDto = when (loginStageMap.getIfPresent(loginChallenge)) {
+    suspend fun loginData(loginChallenge: String): LoginDataDto = when (loginStageMap.getIfPresent(loginChallenge)) {
         is LoginStage.AwaitingMinecraftCheck -> LoginDataDto(false, null, "MINECRAFT_CHECK")
         is LoginStage.AwaitingTotp -> LoginDataDto(false, null, "TOTP")
         is LoginStage.AwaitingAccept -> LoginDataDto(false, null, "ACCEPT")

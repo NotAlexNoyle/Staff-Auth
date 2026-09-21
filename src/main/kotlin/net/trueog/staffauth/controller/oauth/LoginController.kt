@@ -12,6 +12,7 @@ import io.micronaut.security.rules.SecurityRule
 import net.trueog.staffauth.dto.ErrorDto
 import net.trueog.staffauth.dto.login.CredentialsDto
 import net.trueog.staffauth.dto.login.LoginDataDto
+import net.trueog.staffauth.dto.login.LoginDataRequestDto
 import net.trueog.staffauth.dto.login.MinecraftCheckDto
 import net.trueog.staffauth.dto.login.TotpDto
 import net.trueog.staffauth.exception.IncorrectTotpCodeException
@@ -26,9 +27,9 @@ import sh.ory.hydra.ApiException
 class LoginController(
     private val loginService: LoginService,
 ) {
-    @Get("/data")
-    suspend fun loginData(@QueryValue("login_challenge") loginChallenge: String): LoginDataDto =
-        loginService.getLoginData(loginChallenge)
+    @Post("/data")
+    suspend fun loginData(@Body loginDataRequestDto: LoginDataRequestDto): LoginDataDto =
+        loginService.loginData(loginDataRequestDto.loginChallenge)
 
     @Post("/credentials")
     suspend fun credentials(@Body credentialsDto: CredentialsDto, request: HttpRequest<*>) {
