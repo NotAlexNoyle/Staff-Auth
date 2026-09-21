@@ -14,20 +14,11 @@ Copy [application.yml.example](application.yml.example), rename it to whatever y
 ## Initial setup
 Run the server binary with `--initialSetup.adminUuid=your-uuid-here`.
 
-## Restricting clients to roles
-Consent can be limited to certain roles per OAuth2 client (Hydra client id). Users with other roles are refused with
-`access_denied`, including when Hydra would otherwise skip the consent screen for a remembered consent:
-```yaml
-access:
-  clients:
-    <client-id>:
-      roles: [ADMIN, DEVELOPER]
-```
-Clients without an entry are open to every role.
-
 ## Reverse proxy
 If Staff-Auth runs behind a reverse proxy:
 
+- Set `micronaut.server.client-address-header` (e.g. `X-Forwarded-For`) and make the proxy overwrite that header; the
+  Minecraft IP check reads the client address through Micronaut's `HttpClientAddressResolver`.
 - Set `micronaut.server.host-resolution.protocol-header: X-Forwarded-Proto` (and `host-header: Host`) so the OAuth
   `redirect_uri` sent to Hydra uses the public `https://` origin instead of the backend's address.
 - Do **not** use `micronaut.server.context-path` to mount the API under a prefix: Micronaut Security registers the

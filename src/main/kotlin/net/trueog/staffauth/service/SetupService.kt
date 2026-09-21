@@ -101,8 +101,7 @@ class SetupService(
         val minecraftUuid = userRepository.findById(userId)?.minecraftUuid ?: throw InvalidInviteException()
         val minecraftProfileDto = minecraftClient.getByUuid(minecraftUuid)
 
-        // The QR code must encode the same secret we store and later verify against.
-        val qrCode = totpService.generateTotp(minecraftProfileDto?.name ?: throw IllegalStateException(), secret)
+        val (_, qrCode) = totpService.generateTotp(secret, minecraftProfileDto?.name ?: throw IllegalStateException())
 
         setupStageMap.put(token, SetupStage.AwaitingTotpVerify(userId, passwordHash, secret))
 

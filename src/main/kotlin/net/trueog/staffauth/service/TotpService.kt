@@ -8,11 +8,11 @@ import dev.samstevens.totp.util.Utils.getDataUriForImage
 import jakarta.inject.Singleton
 
 @Singleton
-class TotpService(
-    private val codeVerifier: CodeVerifier
-) {
-    /** Build the QR code (data URI) for an existing [secret]; the caller owns the secret's lifecycle. */
-    fun generateTotp(username: String, secret: String): String {
+class TotpService(private val codeVerifier: CodeVerifier) {
+    /**
+     * @return secret, qrCode
+     */
+    fun generateTotp(secret: String, username: String): Pair<String, String> {
         val qrCodeData = QrData.Builder()
             .label(username)
             .secret(secret)
@@ -25,7 +25,8 @@ class TotpService(
         val generator = ZxingPngQrGenerator()
         val imageData = generator.generate(qrCodeData)
 
-        return getDataUriForImage(imageData, generator.imageMimeType)
+        val qrCode = getDataUriForImage(imageData, generator.imageMimeType)
+        return Pair(secret, qrCode)
     }
 
     fun isValid(secret: String, code: String) = codeVerifier.isValidCode(secret, code)

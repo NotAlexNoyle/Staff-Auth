@@ -4,6 +4,7 @@ import io.grpc.Status
 import io.grpc.StatusException
 import io.micronaut.http.HttpRequest
 import io.micronaut.http.HttpResponse
+import io.micronaut.http.server.util.HttpClientAddressResolver
 import io.micronaut.http.HttpStatus
 import io.micronaut.http.annotation.*
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -19,7 +20,6 @@ import net.trueog.staffauth.exception.IncorrectTotpCodeException
 import net.trueog.staffauth.exception.TooManyRequestsException
 import net.trueog.staffauth.exception.login.*
 import net.trueog.staffauth.model.LoginStage
-import net.trueog.staffauth.service.ClientIpService
 import net.trueog.staffauth.service.oauth.LoginService
 import sh.ory.hydra.ApiException
 
@@ -27,7 +27,7 @@ import sh.ory.hydra.ApiException
 @Secured(SecurityRule.IS_ANONYMOUS)
 class LoginController(
     private val loginService: LoginService,
-    private val clientIpService: ClientIpService,
+    private val clientAddressResolver: HttpClientAddressResolver,
 ) {
     @Post("/data")
     suspend fun loginData(@Body loginDataRequestDto: LoginDataRequestDto): LoginDataDto =
@@ -39,20 +39,20 @@ class LoginController(
             credentialsDto.loginChallenge,
             credentialsDto.username,
             credentialsDto.password,
-            clientIpService.resolve(request)
+            clientAddressResolver.resolve(request)
         )
     }
 
     @Post("/minecraftcheck")
     suspend fun minecraftCheck(@Body minecraftCheckDto: MinecraftCheckDto, request: HttpRequest<*>): Boolean {
-        return loginService.minecraftCheck(minecraftCheckDto.loginChallenge, clientIpService.resolve(request))
+        return loginService.minecraftCheck(minecraftCheckDto.loginChallenge, clientAddressResolver.resolve(request))
     }
 
     @Post("/totp")
     suspend fun totp(@Body totpDto: TotpDto, request: HttpRequest<*>): String {
-        loginService.totp(totpDto.loginChallenge, totpDto.code, clientIpService.resolve(request))
+        loginService.totp(totpDto.loginChallenge, totpDto.code, clientAddressResolver.resolve(request))
         val redirectUrl =
-            loginService.accept(totpDto.loginChallenge, totpDto.rememberMe, clientIpService.resolve(request))
+            loginService.accept(totpDto.loginChallenge, totpDto.rememberMe, clientAddressResolver.resolve(request))
         return redirectUrl
     }
 
