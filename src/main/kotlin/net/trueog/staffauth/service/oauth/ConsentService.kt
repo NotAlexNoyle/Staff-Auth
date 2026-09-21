@@ -28,7 +28,11 @@ class ConsentService(
 
     suspend fun accept(consentRequest: OAuth2ConsentRequest): URI {
         val subject = consentRequest.subject ?: throw IllegalStateException()
-        val user = userRepository.findByUuid(UUID.fromString(subject)) ?: throw IllegalStateException()
+        val user = userRepository.findByUuid(UUID.fromString(subject))
+        if (user == null || !user.isSetUp || user.deactivated) {
+            return reject(consentRequest)
+        }
+
         val claims = buildMap {
             if (consentRequest.requestedScope?.contains("email") == true) put("email", user.email)
             if (consentRequest.requestedScope?.contains("roles") == true) put("roles", arrayOf(user.role))
