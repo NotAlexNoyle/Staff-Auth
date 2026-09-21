@@ -12,9 +12,10 @@ import net.trueog.staffauth.exception.user.DeleteSelfException
 import net.trueog.staffauth.exception.user.DuplicateMinecraftUuidException
 import net.trueog.staffauth.exception.user.InvalidMinecraftUuidException
 import net.trueog.staffauth.repository.UserRepository
+import sh.ory.hydra.api.OAuth2Api
 
 @Singleton
-class UserService(private val userRepository: UserRepository, private val minecraftClient: MinecraftClient) {
+class UserService(private val userRepository: UserRepository, private val minecraftClient: MinecraftClient, private val oAuth2Api: OAuth2Api) {
     fun list() = userRepository.findAllOrderById().map {
         val username = minecraftClient.getByUuid(it.minecraftUuid)?.name
         UserDto.fromEntity(it, username)
@@ -47,14 +48,21 @@ class UserService(private val userRepository: UserRepository, private val minecr
         if (updateUserDto.minecraftUuid != null) {
             minecraftClient.getByUuid(updateUserDto.minecraftUuid) ?: throw InvalidMinecraftUuidException()
         }
-        val updatedUser = userRepository.update(
-            user.copy(
-                email = updateUserDto.email ?: user.email,
-                role = updateUserDto.role ?: user.role,
-                minecraftUuid = updateUserDto.minecraftUuid ?: user.minecraftUuid,
-                deactivated = updateUserDto.deactivated ?: user.deactivated
-            )
+
+        var updatedUser = user.copy(
+            email = updateUserDto.email ?: user.email,
+            role = updateUserDto.role ?: user.role,
+            minecraftUuid = updateUserDto.minecraftUuid ?: user.minecraftUuid,
+            deactivated = updateUserDto.deactivated ?: user.deactivated
         )
+
+        val roleChanged = user.role != updatedUser.role
+        val deactivate = !user.deactivated && updatedUser.deactivated
+        if (roleChanged || deactivate) {
+            if (deactivate) oAuth2Api.revokeOAuth2LoginSessions(updatedUser.uuid.toString(), null)
+            oAuth2Api.revokeOAuth2ConsentSessions(updatedUser.uuid.toString(), null, null, true)
+        }
+        updatedUser = userRepository.update(updatedUser)
         val username = minecraftClient.getByUuid(updatedUser.minecraftUuid)?.name
         return UserDto.fromEntity(updatedUser, username)
     }
