@@ -37,7 +37,9 @@ class ConsentService(
             if (consentRequest.requestedScope?.contains("email") == true) put("email", user.email)
             if (consentRequest.requestedScope?.contains("roles") == true) put("roles", arrayOf(user.role))
             if (consentRequest.requestedScope?.contains("profile") == true) {
-                put("name", minecraftClient.getByUuid(user.minecraftUuid)?.name ?: "Unknown username")
+                val name = minecraftClient.getByUuid(user.minecraftUuid)?.name ?: "Unknown username"
+                put("name", name)
+                put("preferred_username", name)
                 put("picture", "https://minotar.net/helm/${user.minecraftUuid.toString().replace("-", "")}.png")
             }
         }
