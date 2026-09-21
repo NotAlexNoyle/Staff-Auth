@@ -16,11 +16,13 @@ class ConsentController(
     private val consentService: ConsentService
 ) {
     @Get
-    fun index(@QueryValue("consent_challenge") consentChallenge: String): Map<String, Any?> {
+    suspend fun index(@QueryValue("consent_challenge") consentChallenge: String): Map<String, Any?> {
         val consentRequest = consentService.getConsentRequest(consentChallenge)
+        val allowed = consentService.isAllowed(consentRequest)
 
         return mapOf(
-            "skip" to (consentRequest.skip == true || consentRequest.requestedScope?.all { it == "openid" } == true),
+            "allowed" to allowed,
+            "skip" to (allowed && (consentRequest.skip == true || consentRequest.requestedScope?.all { it == "openid" } == true)),
             "clientName" to consentRequest.client?.run { clientName?.takeIf { it.isNotBlank() } ?: clientId },
             "scopes" to consentRequest.requestedScope?.filter { it != "openid" }
         )

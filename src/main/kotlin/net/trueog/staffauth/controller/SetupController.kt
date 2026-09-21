@@ -18,12 +18,14 @@ import net.trueog.staffauth.exception.IncorrectTotpCodeException
 import net.trueog.staffauth.exception.setup.DeactivatedException
 import net.trueog.staffauth.exception.setup.IncorrectSetupStageException
 import net.trueog.staffauth.model.SetupStage
+import net.trueog.staffauth.service.ClientIpService
 import net.trueog.staffauth.service.SetupService
 
 @Controller("/setup")
 @Secured(SecurityRule.IS_ANONYMOUS)
 open class SetupController(
-    private val setupService: SetupService
+    private val setupService: SetupService,
+    private val clientIpService: ClientIpService
 ) {
     @Get("/current-stage")
     suspend fun currentStage(@QueryValue("token") token: String): String = setupService.getCurrentStage(token)
@@ -35,7 +37,7 @@ open class SetupController(
 
     @Post("/minecraft-check")
     suspend fun minecraftCheck(@Body tokenDto: TokenDto, request: HttpRequest<*>): Boolean {
-        return setupService.minecraftCheck(tokenDto.token, request.remoteAddress.address.hostAddress)
+        return setupService.minecraftCheck(tokenDto.token, clientIpService.resolve(request))
     }
 
     @Post("/totp-setup")

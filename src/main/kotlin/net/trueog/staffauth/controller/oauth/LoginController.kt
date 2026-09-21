@@ -19,6 +19,7 @@ import net.trueog.staffauth.exception.IncorrectTotpCodeException
 import net.trueog.staffauth.exception.TooManyRequestsException
 import net.trueog.staffauth.exception.login.*
 import net.trueog.staffauth.model.LoginStage
+import net.trueog.staffauth.service.ClientIpService
 import net.trueog.staffauth.service.oauth.LoginService
 import sh.ory.hydra.ApiException
 
@@ -26,6 +27,7 @@ import sh.ory.hydra.ApiException
 @Secured(SecurityRule.IS_ANONYMOUS)
 class LoginController(
     private val loginService: LoginService,
+    private val clientIpService: ClientIpService,
 ) {
     @Post("/data")
     suspend fun loginData(@Body loginDataRequestDto: LoginDataRequestDto): LoginDataDto =
@@ -37,20 +39,20 @@ class LoginController(
             credentialsDto.loginChallenge,
             credentialsDto.username,
             credentialsDto.password,
-            request.remoteAddress.address.hostAddress
+            clientIpService.resolve(request)
         )
     }
 
     @Post("/minecraftcheck")
     suspend fun minecraftCheck(@Body minecraftCheckDto: MinecraftCheckDto, request: HttpRequest<*>): Boolean {
-        return loginService.minecraftCheck(minecraftCheckDto.loginChallenge, request.remoteAddress.address.hostAddress)
+        return loginService.minecraftCheck(minecraftCheckDto.loginChallenge, clientIpService.resolve(request))
     }
 
     @Post("/totp")
     suspend fun totp(@Body totpDto: TotpDto, request: HttpRequest<*>): String {
-        loginService.totp(totpDto.loginChallenge, totpDto.code, request.remoteAddress.address.hostAddress)
+        loginService.totp(totpDto.loginChallenge, totpDto.code, clientIpService.resolve(request))
         val redirectUrl =
-            loginService.accept(totpDto.loginChallenge, totpDto.rememberMe, request.remoteAddress.address.hostAddress)
+            loginService.accept(totpDto.loginChallenge, totpDto.rememberMe, clientIpService.resolve(request))
         return redirectUrl
     }
 
