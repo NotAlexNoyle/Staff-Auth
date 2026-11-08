@@ -59,7 +59,7 @@ class UserService(private val userRepository: UserRepository, private val minecr
         val roleChanged = user.role != updatedUser.role
         val deactivate = !user.deactivated && updatedUser.deactivated
         if (roleChanged || deactivate) {
-            if (deactivate) oAuth2Api.revokeOAuth2LoginSessions(updatedUser.uuid.toString(), null)
+            oAuth2Api.revokeOAuth2LoginSessions(updatedUser.uuid.toString(), null)
             oAuth2Api.revokeOAuth2ConsentSessions(updatedUser.uuid.toString(), null, null, true)
         }
         updatedUser = userRepository.update(updatedUser)
