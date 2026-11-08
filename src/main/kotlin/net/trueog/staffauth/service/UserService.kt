@@ -72,6 +72,8 @@ class UserService(private val userRepository: UserRepository, private val minecr
         if (user.uuid.toString() == auth.attributes["sub"]) {
             throw DeleteSelfException()
         }
+        oAuth2Api.revokeOAuth2LoginSessions(user.uuid.toString(), null)
+        oAuth2Api.revokeOAuth2ConsentSessions(user.uuid.toString(), null, null, true)
         return userRepository.deleteById(id)
     }
 }

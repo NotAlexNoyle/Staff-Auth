@@ -3,6 +3,7 @@ package net.trueog.staffauth.service.oauth
 import io.micronaut.context.annotation.Value
 import jakarta.inject.Singleton
 import net.trueog.staffauth.client.MinecraftClient
+import net.trueog.staffauth.model.Role
 import net.trueog.staffauth.repository.UserRepository
 import sh.ory.hydra.api.OAuth2Api
 import sh.ory.hydra.model.AcceptOAuth2ConsentRequest
@@ -36,6 +37,7 @@ class ConsentService(
         val claims = buildMap {
             if (consentRequest.requestedScope?.contains("email") == true) put("email", user.email)
             if (consentRequest.requestedScope?.contains("roles") == true) put("roles", arrayOf(user.role))
+            if (consentRequest.requestedScope?.contains("roles") == true && user.role in GITEA_ROLES) put("gitea_role", user.role)
             if (consentRequest.requestedScope?.contains("profile") == true) {
                 val name = minecraftClient.getByUuid(user.minecraftUuid)?.name ?: "Unknown username"
                 put("name", name)
@@ -54,5 +56,10 @@ class ConsentService(
     fun reject(consentRequest: OAuth2ConsentRequest): URI {
         val response = oAuth2Api.rejectOAuth2ConsentRequest(consentRequest.challenge, RejectOAuth2Request())
         return URI.create(response.redirectTo)
+    }
+
+    companion object {
+        // Only these roles get the gitea_role claim that Gitea requires, so everyone else is refused at login
+        private val GITEA_ROLES = setOf(Role.ADMIN, Role.DEVELOPER)
     }
 }
