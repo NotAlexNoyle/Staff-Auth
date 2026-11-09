@@ -7,6 +7,7 @@ import net.trueog.staffauth.client.MinecraftClient
 import net.trueog.staffauth.dto.admin.CreateUserDto
 import net.trueog.staffauth.dto.admin.UpdateUserDto
 import net.trueog.staffauth.dto.admin.UserDto
+import net.trueog.staffauth.entity.User
 import net.trueog.staffauth.exception.user.DeactivateSelfException
 import net.trueog.staffauth.exception.user.DeleteSelfException
 import net.trueog.staffauth.exception.user.DuplicateMinecraftUuidException
@@ -58,11 +59,10 @@ class UserService(private val userRepository: UserRepository, private val minecr
 
         val roleChanged = user.role != updatedUser.role
         val deactivate = !user.deactivated && updatedUser.deactivated
-        if (roleChanged || deactivate) {
-            oAuth2Api.revokeOAuth2LoginSessions(updatedUser.uuid.toString(), null)
-            oAuth2Api.revokeOAuth2ConsentSessions(updatedUser.uuid.toString(), null, null, true)
-        }
+        // Revoke before the write so a Hydra failure aborts it, and after so nothing accepted in between survives
+        if (roleChanged || deactivate) revokeSessions(updatedUser)
         updatedUser = userRepository.update(updatedUser)
+        if (roleChanged || deactivate) revokeSessions(updatedUser)
         val username = minecraftClient.getByUuid(updatedUser.minecraftUuid)?.name
         return UserDto.fromEntity(updatedUser, username)
     }
@@ -72,8 +72,14 @@ class UserService(private val userRepository: UserRepository, private val minecr
         if (user.uuid.toString() == auth.attributes["sub"]) {
             throw DeleteSelfException()
         }
+        revokeSessions(user)
+        val deleted = userRepository.deleteById(id)
+        revokeSessions(user)
+        return deleted
+    }
+
+    private fun revokeSessions(user: User) {
         oAuth2Api.revokeOAuth2LoginSessions(user.uuid.toString(), null)
         oAuth2Api.revokeOAuth2ConsentSessions(user.uuid.toString(), null, null, true)
-        return userRepository.deleteById(id)
     }
 }
