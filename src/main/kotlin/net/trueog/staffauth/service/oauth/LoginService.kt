@@ -38,6 +38,9 @@ class LoginService(
 
     val totpRegex = "^\\d{6}$".toRegex()
 
+    // How long a login without "remember me" stays valid for single sign-on
+    private val shortRememberDuration: Duration = Duration.ofMinutes(15)
+
     @Value($$"${hydra.remember-duration}")
     lateinit var rememberDuration: Duration
 
@@ -146,9 +149,9 @@ class LoginService(
 
         val response = oAuth2Api.acceptOAuth2LoginRequest(
             loginRequest.challenge,
-            AcceptOAuth2LoginRequest().subject(user.uuid.toString()).remember(rememberMe).apply {
-                if (rememberMe) rememberFor(rememberDuration.seconds)
-            }
+            // Always remember the login for single sign-on, briefly when unticked, never 0 (Hydra's default lifespan)
+            AcceptOAuth2LoginRequest().subject(user.uuid.toString()).remember(true)
+                .rememberFor(if (rememberMe) rememberDuration.seconds else shortRememberDuration.seconds)
         )
         loginStageMap.invalidate(loginChallenge)
         return response.redirectTo
