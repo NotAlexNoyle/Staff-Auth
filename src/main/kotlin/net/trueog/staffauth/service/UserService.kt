@@ -13,10 +13,14 @@ import net.trueog.staffauth.exception.user.DeleteSelfException
 import net.trueog.staffauth.exception.user.DuplicateMinecraftUuidException
 import net.trueog.staffauth.exception.user.InvalidMinecraftUuidException
 import net.trueog.staffauth.repository.UserRepository
-import sh.ory.hydra.api.OAuth2Api
+import net.trueog.staffauth.service.oauth.SessionRevocationService
 
 @Singleton
-class UserService(private val userRepository: UserRepository, private val minecraftClient: MinecraftClient, private val oAuth2Api: OAuth2Api) {
+class UserService(
+    private val userRepository: UserRepository,
+    private val minecraftClient: MinecraftClient,
+    private val sessionRevocationService: SessionRevocationService
+) {
     fun list() = userRepository.findAllOrderById().map {
         val username = minecraftClient.getByUuid(it.minecraftUuid)?.name
         UserDto.fromEntity(it, username)
@@ -78,8 +82,5 @@ class UserService(private val userRepository: UserRepository, private val minecr
         return deleted
     }
 
-    private fun revokeSessions(user: User) {
-        oAuth2Api.revokeOAuth2LoginSessions(user.uuid.toString(), null)
-        oAuth2Api.revokeOAuth2ConsentSessions(user.uuid.toString(), null, null, true)
-    }
+    private fun revokeSessions(user: User) = sessionRevocationService.revokeAll(user.uuid.toString())
 }
